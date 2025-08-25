@@ -1,0 +1,4 @@
+Manifest-Version: 1.0
+OpenIDE-Module-Localizing-Bundle: ste/netbeans/logging/Bundle.properties
+Bundle-License: https://www.apache.org/licenses/LICENSE-2.0.txt
+Created-By: Stefano Fornari
