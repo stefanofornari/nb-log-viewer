@@ -17,10 +17,11 @@ package ste.netbeans.logging;
 
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
-import java.util.logging.Formatter;
 import java.util.logging.SimpleFormatter;
 import org.openide.windows.WindowManager;
 import java.awt.EventQueue;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * A custom {@link java.util.logging.Handler} that directs log records
@@ -29,7 +30,8 @@ import java.awt.EventQueue;
 public class LogViewerHandler extends Handler {
 
     private LogViewerTopComponent logViewerTopComponent;
-    private Formatter formatter;
+
+    private final Set<String> collectedLoggers = new TreeSet();
 
     /**
      * Constructs a new {@code LogViewerHandler}.
@@ -40,7 +42,7 @@ public class LogViewerHandler extends Handler {
         logViewerTopComponent = (LogViewerTopComponent) WindowManager.getDefault().findTopComponent("LogViewerTopComponent");
         if (logViewerTopComponent == null) {
             // Handle case where TopComponent is not yet initialized or found
-            // This might happen if the module is loaded before the UI is fully ready
+            // This might happen if the module is loaded before the UI is fully read
             // For now, we'll just set it to null and handle it in publish
         }
         setFormatter(new SimpleFormatter());
@@ -48,22 +50,30 @@ public class LogViewerHandler extends Handler {
 
     @Override
     public void publish(LogRecord record) {
+        //
+        // collect the logger name even if it won't be displayed
+        //
+        final String loggerName = record.getLoggerName();
+        if (loggerName != null) {
+            collectedLoggers.add(record.getLoggerName());
+        }
+
         if (!isLoggable(record)) {
             return;
         }
-        final String msg = getFormatter().format(record).stripTrailing();
+        final String msg = getFormatter().format(record);
 
         // Ensure UI updates are done on the Event Dispatch Thread
         EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
                 if (logViewerTopComponent != null) {
-                    logViewerTopComponent.appendLog(msg);
+                    logViewerTopComponent.logViewerPanel.appendLog(msg);
                 } else {
                     // Try to find the TopComponent again if it was null initially
                     logViewerTopComponent = (LogViewerTopComponent) WindowManager.getDefault().findTopComponent("LogViewerTopComponent");
                     if (logViewerTopComponent != null) {
-                        logViewerTopComponent.appendLog(msg);
+                        logViewerTopComponent.logViewerPanel.appendLog(msg);
                     }
                 }
             }
